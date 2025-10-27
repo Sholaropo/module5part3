@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pixel River Financial Banking Microservice</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css">
+</head>
+<body class="container mt-5">
+  <h1>Welcome, {{ user.first_name }} {{ user.last_name }}, to Pixel River Financial Services, Your Monthly Transaction Report Available as well</h1>
+  <p>Account Balance: ${{ '%.2f'|format(user.balance) }}</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  <form action="/api/deposit" method="POST" class="mb-3">
+    <div class="mb-3">
+      <label for="depositAmount" class="form-label">Deposit Amount</label>
+      <input type="number" step="0.01" class="form-control" id="depositAmount" name="amount" required>
+    </div>
+    <button type="submit" class="btn btn-success">Deposit</button>
+  </form>
+  <form action="/api/withdraw" method="POST" class="mb-3">
+    <div class="mb-3">
+      <label for="withdrawAmount" class="form-label">Withdraw Amount</label>
+      <input type="number" step="0.01" class="form-control" id="withdrawAmount" name="amount" required>
+    </div>
+    <button type="submit" class="btn btn-danger">Withdraw</button>
+  </form>
+ 
+  <!-- New Transactions Section -->
+  <div class="mt-4">
+    <button id="viewTransactions" class="btn btn-info mb-3">View Transactions</button>
+    <div id="transactionsContainer" style="display:none;">
+      <h3>Your Transactions</h3>
+      <div id="transactionsList"></div>
+    </div>
+  </div>
+   
+  <a href="/api/logout" class="btn btn-secondary">Logout</a>
+
+  <!-- JavaScript -->
+  <script>
+    document.getElementById('viewTransactions').addEventListener('click', async () => {
+      const container = document.getElementById('transactionsContainer');
+      const list = document.getElementById('transactionsList');
+      list.innerHTML = '';  // clear prior
+
+      try {
+        // Get transactions from the current user's data (already available in template)
+        const transactions = {{ user.transactions | tojson | safe }};
+        
+        if (!transactions || transactions.length === 0) {
+          list.innerHTML = '<div class="alert alert-info">No transactions found. Make a deposit or withdrawal to see transactions here!</div>';
+        } else {
+          // Group transactions by month
+          const grouped = {};
+          
+          transactions.forEach((t, index) => {
+            const date = new Date();
+            const monthYear = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            
+            if (!grouped[monthYear]) {
+              grouped[monthYear] = [];
+            }
+            
+            grouped[monthYear].push({
+              type: t.type,
+              amount: t.amount,
+              date: date.toLocaleString('en-US', { 
+                month: 'short', 
+                day: 'numeric', 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              }),
+              index: index + 1
+            });
+          });
+
+          // Display grouped transactions
+          Object.keys(grouped).forEach(month => {
+            const monthDiv = document.createElement('div');
+            monthDiv.className = 'mb-4';
+            
+            let monthHTML = `<h4 class="text-primary">${month}</h4><table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>`;
+            
+            grouped[month].forEach(t => {
+              const badgeClass = t.type === 'deposit' ? 'success' : 'danger';
+              const amountSign = t.type === 'deposit' ? '+' : '-';
+              const amountClass = t.type === 'deposit' ? 'text-success' : 'text-danger';
+              
+              monthHTML += `
+                <tr>
+                  <td>${t.index}</td>
+                  <td>${t.date}</td>
+                  <td><span class="badge bg-${badgeClass}">${t.type}</span></td>
+                  <td class="${amountClass} fw-bold">${amountSign}$${t.amount.toFixed(2)}</td>
+                </tr>
+              `;
+            });
+            
+            monthHTML += `</tbody></table>`;
+            monthDiv.innerHTML = monthHTML;
+            list.appendChild(monthDiv);
+          });
+        }
+        
+        container.style.display = 'block';
+        
+      } catch (err) {
+        console.error('Error displaying transactions:', err);
+        list.innerHTML = '<div class="alert alert-danger">Failed to display transactions. Error: ' + err.message + '</div>';
+      }
+    });
+  </script>
+</body>
+</html>
