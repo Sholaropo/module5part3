@@ -1,3 +1,4 @@
+powershell# Create a very simple workflow that just checks out the code
 @"
 name: CI
 
@@ -12,11 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v3
-    
-    - name: Run simple check
-      run: |
-        echo "Running CI checks..."
-        echo "Build successful!"
+      
+    - name: List files
+      run: ls -la
+      
+    - name: Success message
+      run: echo "Workflow completed successfully!"
 "@ | Set-Content -Path ".github/workflows/ci.yml" -Encoding utf8
