@@ -1,24 +1,17 @@
-powershell# Create a very simple workflow that just checks out the code
-@"
+$workflowContent = @'
 name: CI
 
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      
-    - name: List files
-      run: ls -la
-      
-    - name: Success message
-      run: echo "Workflow completed successfully!"
-"@ | Set-Content -Path ".github/workflows/ci.yml" -Encoding utf8
+      - uses: actions/checkout@v3
+      - name: Run a test
+        run: echo "Hello, world!"
+'@
+
+$workflowContent | Out-File -FilePath ".github/workflows/ci.yml" -Encoding utf8 -NoNewline
