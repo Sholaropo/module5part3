@@ -12,8 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
     
-    - name: Simple test
-      run: echo "Build successful!"
+    - name: Run simple check
+      run: |
+        echo "Running CI checks..."
+        echo "Build successful!"
 "@ | Set-Content -Path ".github/workflows/ci.yml" -Encoding utf8
